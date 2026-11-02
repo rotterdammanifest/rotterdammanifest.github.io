@@ -1,0 +1,164 @@
+:root {
+  --night: #0a0b14;
+  --violet: #6a4cff;
+  --teal: #12d6c4;
+  --rose: #ff5c9d;
+  --ink: #f2f3ff;
+  --soft: #b4b8d6;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; margin: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--night);
+  color: var(--ink);
+  font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+}
+
+body {
+  display: grid;
+  place-items: center;
+  height: 100dvh;
+}
+
+/* background */
+.aurora {
+  position: fixed;
+  inset: -6%;
+  transform: translate3d(var(--px, 0), var(--py, 0), 0);
+  transition: transform 0.9s ease-out;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(90px);
+  mix-blend-mode: screen;
+  opacity: 0.75;
+  will-change: transform;
+}
+
+.b1 {
+  width: 60vmax; height: 60vmax;
+  left: -12vmax; top: -18vmax;
+  background: var(--violet);
+  animation: drift-a 24s ease-in-out infinite alternate;
+}
+
+.b2 {
+  width: 55vmax; height: 55vmax;
+  right: -14vmax; bottom: -22vmax;
+  background: var(--teal);
+  animation: drift-b 30s ease-in-out infinite alternate;
+}
+
+.b3 {
+  width: 34vmax; height: 34vmax;
+  left: 38%; top: 46%;
+  background: var(--rose);
+  opacity: 0.5;
+  animation: drift-c 27s ease-in-out infinite alternate;
+}
+
+@keyframes drift-a {
+  to { transform: translate3d(14vmax, 10vmax, 0) scale(1.15); }
+}
+@keyframes drift-b {
+  to { transform: translate3d(-16vmax, -8vmax, 0) scale(0.9); }
+}
+@keyframes drift-c {
+  to { transform: translate3d(-18vmax, -14vmax, 0) scale(1.3); }
+}
+
+/* the card */
+main {
+  position: relative;
+  animation: arrive 1s ease-out both;
+}
+
+@keyframes arrive {
+  from { opacity: 0; translate: 0 16px; }
+}
+
+.card {
+  position: relative;
+  width: min(92vw, 520px);
+  padding: 2.8rem 2.4rem 2.5rem;
+  border-radius: 30px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  backdrop-filter: blur(24px) saturate(150%);
+  box-shadow:
+    0 40px 90px rgba(3, 3, 12, 0.55),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.18s ease-out;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .card { background: rgba(28, 26, 60, 0.85); }
+}
+
+/* light that follows the cursor */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(420px circle at var(--mx, 30%) var(--my, 0%), rgba(255, 255, 255, 0.2), transparent 62%);
+}
+
+h1 {
+  font-size: clamp(1.7rem, 7.4vw, 2.6rem);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.05;
+  font-variation-settings: "opsz" 96;
+  overflow-wrap: anywhere;
+}
+
+p {
+  margin-top: 1rem;
+  max-width: 34ch;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  font-weight: 350;
+  color: var(--soft);
+}
+
+.link {
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 0.65rem 1.3rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.link:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--teal);
+  outline-offset: 3px;
+}
+
+@media (max-width: 420px) {
+  .card { padding: 2.2rem 1.6rem 2rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blob, main { animation: none; }
+  .aurora, .card { transition: none; }
+}
