@@ -2,9 +2,9 @@
   --night: #0a0b14;
   --violet: #6a4cff;
   --teal: #12d6c4;
-  --rose: #ff5c9d;
   --ink: #f2f3ff;
   --soft: #b4b8d6;
+  --heat: 1;
   color-scheme: dark;
 }
 
@@ -13,74 +13,28 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  background: var(--night);
   color: var(--ink);
   font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  background:
+    radial-gradient(60vmax 50vmax at 15% 0%, rgba(106, 76, 255, 0.55), transparent),
+    radial-gradient(55vmax 45vmax at 90% 100%, rgba(18, 214, 196, 0.4), transparent),
+    var(--night);
 }
 
-body {
-  display: grid;
-  place-items: center;
-  height: 100dvh;
-}
+body { display: grid; place-items: center; height: 100dvh; }
 
-/* background */
-.aurora {
+#lamp {
   position: fixed;
-  inset: -6%;
-  transform: translate3d(var(--px, 0), var(--py, 0), 0);
-  transition: transform 0.9s ease-out;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.blob {
-  position: absolute;
-  border-radius: 50%;
-  filter: blur(90px);
-  mix-blend-mode: screen;
-  opacity: 0.75;
-  will-change: transform;
-}
-
-.b1 {
-  width: 60vmax; height: 60vmax;
-  left: -12vmax; top: -18vmax;
-  background: var(--violet);
-  animation: drift-a 24s ease-in-out infinite alternate;
-}
-
-.b2 {
-  width: 55vmax; height: 55vmax;
-  right: -14vmax; bottom: -22vmax;
-  background: var(--teal);
-  animation: drift-b 30s ease-in-out infinite alternate;
-}
-
-.b3 {
-  width: 34vmax; height: 34vmax;
-  left: 38%; top: 46%;
-  background: var(--rose);
-  opacity: 0.5;
-  animation: drift-c 27s ease-in-out infinite alternate;
-}
-
-@keyframes drift-a {
-  to { transform: translate3d(14vmax, 10vmax, 0) scale(1.15); }
-}
-@keyframes drift-b {
-  to { transform: translate3d(-16vmax, -8vmax, 0) scale(0.9); }
-}
-@keyframes drift-c {
-  to { transform: translate3d(-18vmax, -14vmax, 0) scale(1.3); }
-}
-
-/* the card */
-main {
-  position: relative;
-  animation: arrive 1s ease-out both;
-}
+main { position: relative; animation: arrive 1.2s 0.4s ease-out both; }
 
 @keyframes arrive {
-  from { opacity: 0; translate: 0 16px; }
+  from { opacity: 0; translate: 0 16px; filter: blur(8px); }
 }
 
 .card {
@@ -88,12 +42,14 @@ main {
   width: min(92vw, 520px);
   padding: 2.8rem 2.4rem 2.5rem;
   border-radius: 30px;
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.04));
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
   border: 1px solid rgba(255, 255, 255, 0.2);
-  -webkit-backdrop-filter: blur(24px) saturate(150%);
-  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  backdrop-filter: blur(26px) saturate(150%);
+  /* the glow under the card follows how warm the lamp is */
   box-shadow:
-    0 40px 90px rgba(3, 3, 12, 0.55),
+    0 30px 80px rgba(3, 3, 12, 0.5),
+    0 0 90px rgba(106, 76, 255, calc(0.22 * var(--heat))),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition: transform 0.18s ease-out;
@@ -103,23 +59,27 @@ main {
   .card { background: rgba(28, 26, 60, 0.85); }
 }
 
-/* light that follows the cursor */
 .card::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(420px circle at var(--mx, 30%) var(--my, 0%), rgba(255, 255, 255, 0.2), transparent 62%);
+  background: radial-gradient(420px circle at var(--mx, 30%) var(--my, 0%), rgba(255, 255, 255, 0.18), transparent 62%);
 }
 
 h1 {
-  font-size: clamp(1.7rem, 7.4vw, 2.6rem);
-  font-weight: 500;
-  letter-spacing: -0.025em;
+  font-size: clamp(1.6rem, 7vw, 2.5rem);
   line-height: 1.05;
-  font-variation-settings: "opsz" 96;
+  letter-spacing: -0.02em;
+  font-variation-settings: "opsz" 96, "wght" 420, "wdth" 88;
   overflow-wrap: anywhere;
+}
+
+/* letters swell when the cursor gets close (see script.js) */
+h1 span {
+  display: inline-block;
+  transition: font-variation-settings 0.35s ease-out;
 }
 
 p {
@@ -144,21 +104,47 @@ p {
   transition: background 0.2s, border-color 0.2s;
 }
 
-.link:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.5);
+.link:hover { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.5); }
+.link:focus-visible, .lamp-switch:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+
+/* the lamp switch */
+.lamp-switch {
+  position: fixed;
+  left: 50%;
+  bottom: calc(1.4rem + env(safe-area-inset-bottom, 0px));
+  translate: -50% 0;
+  width: 3.4rem;
+  height: 1.9rem;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.07);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  cursor: pointer;
 }
 
-.link:focus-visible {
-  outline: 2px solid var(--teal);
-  outline-offset: 3px;
+.lamp-switch::after {
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  left: 0.2rem;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff, #b9a8ff 55%, var(--violet));
+  opacity: calc(0.4 + 0.6 * var(--heat));
+  box-shadow: 0 0 calc(2px + 18px * var(--heat)) rgba(130, 100, 255, 0.9);
+  transition: translate 0.6s cubic-bezier(0.5, 0, 0.2, 1);
 }
+
+.lamp-switch[aria-checked="true"]::after { translate: 1.5rem 0; }
 
 @media (max-width: 420px) {
   .card { padding: 2.2rem 1.6rem 2rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .blob, main { animation: none; }
-  .aurora, .card { transition: none; }
+  main { animation: none; }
+  .card, h1 span, .lamp-switch::after { transition: none; }
 }
