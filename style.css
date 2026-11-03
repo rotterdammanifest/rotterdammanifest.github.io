@@ -1,10 +1,8 @@
 :root {
-  --night: #0a0b14;
-  --violet: #6a4cff;
-  --teal: #12d6c4;
-  --ink: #f2f3ff;
-  --soft: #b4b8d6;
-  --heat: 1;
+  --bone: #f4e7e2;
+  --dim: #e6cdc7;
+  --ember: #e3302f;
+  --beat: 0;
   color-scheme: dark;
 }
 
@@ -13,25 +11,27 @@
 html, body {
   height: 100%;
   overflow: hidden;
-  color: var(--ink);
+  color: var(--bone);
   font-family: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  /* what you see if the canvas can't run */
   background:
-    radial-gradient(60vmax 50vmax at 15% 0%, rgba(106, 76, 255, 0.55), transparent),
-    radial-gradient(55vmax 45vmax at 90% 100%, rgba(18, 214, 196, 0.4), transparent),
-    var(--night);
+    radial-gradient(60vmax 50vmax at 70% 40%, rgba(140, 14, 24, 0.5), transparent),
+    #0b0204;
 }
 
 body { display: grid; place-items: center; height: 100dvh; }
 
-#lamp {
+#cells, #fore {
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
 }
+#cells { z-index: 0; }
+#fore { z-index: 2; pointer-events: none; }
 
-main { position: relative; animation: arrive 1.2s 0.4s ease-out both; }
+main { position: relative; z-index: 1; animation: arrive 1.4s 1.5s ease-out both; }
 
 @keyframes arrive {
   from { opacity: 0; translate: 0 16px; filter: blur(8px); }
@@ -42,21 +42,21 @@ main { position: relative; animation: arrive 1.2s 0.4s ease-out both; }
   width: min(92vw, 520px);
   padding: 2.8rem 2.4rem 2.5rem;
   border-radius: 30px;
-  background: linear-gradient(150deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.04));
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  -webkit-backdrop-filter: blur(26px) saturate(150%);
-  backdrop-filter: blur(26px) saturate(150%);
-  /* the glow under the card follows how warm the lamp is */
+  background: linear-gradient(150deg, rgba(150, 20, 28, 0.22), rgba(12, 2, 5, 0.68));
+  border: 1px solid rgba(255, 110, 100, 0.16);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+  backdrop-filter: blur(18px) saturate(120%);
+  /* the glow breathes with the heartbeat (--beat is set in cells.js) */
   box-shadow:
-    0 30px 80px rgba(3, 3, 12, 0.5),
-    0 0 90px rgba(106, 76, 255, calc(0.22 * var(--heat))),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 30px 80px rgba(0, 0, 0, 0.65),
+    0 0 calc(40px + 50px * var(--beat)) rgba(210, 30, 36, calc(0.14 + 0.16 * var(--beat))),
+    inset 0 1px 0 rgba(255, 170, 150, 0.2);
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transition: transform 0.18s ease-out;
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .card { background: rgba(28, 26, 60, 0.85); }
+  .card { background: rgba(20, 4, 8, 0.92); }
 }
 
 .card::before {
@@ -65,7 +65,7 @@ main { position: relative; animation: arrive 1.2s 0.4s ease-out both; }
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
-  background: radial-gradient(420px circle at var(--mx, 30%) var(--my, 0%), rgba(255, 255, 255, 0.18), transparent 62%);
+  background: radial-gradient(420px circle at var(--mx, 30%) var(--my, 0%), rgba(255, 150, 130, 0.14), transparent 62%);
 }
 
 h1 {
@@ -74,13 +74,10 @@ h1 {
   letter-spacing: -0.02em;
   font-variation-settings: "opsz" 96, "wght" 420, "wdth" 88;
   overflow-wrap: anywhere;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.6);
 }
 
-/* letters swell when the cursor gets close (see script.js) */
-h1 span {
-  display: inline-block;
-  transition: font-variation-settings 0.35s ease-out;
-}
+h1 span { display: inline-block; transition: font-variation-settings 0.35s ease-out; }
 
 p {
   margin-top: 1rem;
@@ -88,7 +85,8 @@ p {
   font-size: 1.05rem;
   line-height: 1.5;
   font-weight: 350;
-  color: var(--soft);
+  color: var(--dim);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
 }
 
 .link {
@@ -96,49 +94,39 @@ p {
   margin-top: 2rem;
   padding: 0.65rem 1.3rem;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--ink);
+  border: 1px solid rgba(255, 130, 120, 0.35);
+  background: rgba(200, 30, 36, 0.14);
+  color: var(--bone);
   font-weight: 500;
   text-decoration: none;
   transition: background 0.2s, border-color 0.2s;
 }
 
-.link:hover { background: rgba(255, 255, 255, 0.18); border-color: rgba(255, 255, 255, 0.5); }
-.link:focus-visible, .lamp-switch:focus-visible { outline: 2px solid var(--teal); outline-offset: 3px; }
+.link:hover { background: rgba(220, 40, 46, 0.3); border-color: rgba(255, 150, 140, 0.6); }
+.link:focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; }
 
-/* the lamp switch */
-.lamp-switch {
+.tag {
   position: fixed;
-  left: 50%;
-  bottom: calc(1.4rem + env(safe-area-inset-bottom, 0px));
-  translate: -50% 0;
-  width: 3.4rem;
-  height: 1.9rem;
-  padding: 0;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.07);
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
-  cursor: pointer;
+  z-index: 3;
+  left: calc(1.3rem + env(safe-area-inset-left, 0px));
+  bottom: calc(1.1rem + env(safe-area-inset-bottom, 0px));
+  font: italic 400 1.15rem "Cormorant Garamond", Georgia, serif;
+  color: rgba(244, 231, 226, 0.36);
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
 }
 
-.lamp-switch::after {
+/* film grain over everything */
+body::after {
   content: "";
-  position: absolute;
-  top: 0.2rem;
-  left: 0.2rem;
-  width: 1.4rem;
-  height: 1.4rem;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff, #b9a8ff 55%, var(--violet));
-  opacity: calc(0.4 + 0.6 * var(--heat));
-  box-shadow: 0 0 calc(2px + 18px * var(--heat)) rgba(130, 100, 255, 0.9);
-  transition: translate 0.6s cubic-bezier(0.5, 0, 0.2, 1);
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-
-.lamp-switch[aria-checked="true"]::after { translate: 1.5rem 0; }
 
 @media (max-width: 420px) {
   .card { padding: 2.2rem 1.6rem 2rem; }
@@ -146,5 +134,5 @@ p {
 
 @media (prefers-reduced-motion: reduce) {
   main { animation: none; }
-  .card, h1 span, .lamp-switch::after { transition: none; }
+  .card, h1 span { transition: none; }
 }
