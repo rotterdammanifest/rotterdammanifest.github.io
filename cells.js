@@ -31,24 +31,60 @@
   const pointer = { x: 0, y: 0, vx: 0, vy: 0, on: false, t: 0 };
   const mark = { x: 0, y: 0, vx: 0, vy: 0, ew: 0, eh: 0, a: 0, under: 1, ratio: 1, body: null, glow: null, placed: false };
 
-  // one cell: dark middle, bright rim. soft = how out of focus
-  function makeSprite(s) {
-    const c = canvasOf(128, 128), g = c.getContext('2d');
-    const r = g.createRadialGradient(64, 64, 0, 64, 64, 62);
-    r.addColorStop(0, `rgba(60,4,10,${1 - 0.5 * s})`);
-    r.addColorStop(0.3, `rgba(110,10,18,${1 - 0.45 * s})`);
-    r.addColorStop(0.68 - 0.2 * s, `rgba(190,22,30,${1 - 0.35 * s})`);
-    r.addColorStop(0.9 - 0.4 * s, `rgba(226,48,50,${0.95 - 0.5 * s})`);
-    r.addColorStop(1, 'rgba(120,10,16,0)');
-    g.fillStyle = r;
-    g.fillRect(0, 0, 128, 128);
-    g.fillStyle = `rgba(255,190,170,${0.35 * (1 - s)})`;
-    g.beginPath();
-    g.ellipse(44, 40, 14, 6, -0.6, 0, 6.28);
-    g.fill();
-    return c;
+  // cells are shaded from a real red blood cell profile (a biconcave disc),
+  // drawn once at load at a few tilt angles so tumbling looks solid
+  const FRAMES = 13, N = 96, DISC = N * 0.38, PAD = N / 2 / DISC;
+  const C0 = 0.2072, C1 = 2.0026, C2 = -1.1228;
+  const half = p => 0.5 * Math.sqrt(1 - p * p) * (C0 + C1 * p * p + C2 * p ** 4);
+  const slope = p => 0.5 * (-p / Math.sqrt(1 - p * p) * (C0 + C1 * p * p + C2 * p ** 4) + Math.sqrt(1 - p * p) * (2 * C1 * p + 4 * C2 * p ** 3));
+
+  function makeSheets() {
+    const sheet = canvasOf(N * FRAMES, N);
+    const ln = Math.hypot(-0.45, -0.55, 0.7), lx = -0.45 / ln, ly = -0.55 / ln, lz = 0.7 / ln;   // light from the upper left
+    const hx = lx, hy = ly, hz = lz + 1, hn = Math.hypot(hx, hy, hz);
+    const RS = 140, AS = 300;
+    const cosA = Array.from({ length: AS }, (_, j) => Math.cos(j / AS * 6.2832));
+    const sinA = Array.from({ length: AS }, (_, j) => Math.sin(j / AS * 6.2832));
+
+    for (let f = 0; f < FRAMES; f++) {
+      const theta = f / (FRAMES - 1) * Math.PI / 2, ct = Math.cos(theta), st = Math.sin(theta);
+      const px = new Uint8ClampedArray(N * N * 4), zb = new Float32Array(N * N).fill(-9);
+      for (let i = 0; i < N * N; i++) px.set([150, 20, 26, 0], i * 4);
+
+      for (let s = -1; s <= 1; s += 2) {                  // top and bottom face
+        for (let i = 0; i < RS; i++) {
+          const p = Math.sin((i + 0.5) / RS * Math.PI / 2), hh = half(p), hp = slope(p);
+          const t = Math.min(1, hh / 0.33) ** 0.8;        // thick parts are darker
+          for (let j = 0; j < AS; j++) {
+            const cx = cosA[j], sy = sinA[j], y = p * sy, z = s * hh;
+            let nx = -hp * cx, ny = -hp * sy, nz = s;
+            const nl = Math.hypot(nx, ny, nz);
+            nx /= nl; ny /= nl; nz /= nl;
+            const NZ = ny * st + nz * ct;
+            if (NZ <= 0) continue;                        // facing away
+            const NY = ny * ct - nz * st, Z = y * st + z * ct;
+            const k = ((N / 2 + (y * ct - z * st) * DISC) | 0) * N + ((N / 2 + p * cx * DISC) | 0);
+            if (Z <= zb[k]) continue;
+            zb[k] = Z;
+            const diff = clamp((nx * lx + NY * ly + NZ * lz) * 0.5 + 0.5, 0, 1);
+            const spec = Math.max(0, (nx * hx + NY * hy + NZ * hz) / hn) ** 40 * 0.8;
+            const rim = (1 - NZ) ** 2.2 * 0.35, m = 0.28 + 0.9 * diff;
+            px[k * 4] = (236 - 118 * t) * m + 255 * spec + 255 * rim;
+            px[k * 4 + 1] = (76 - 66 * t) * m + 200 * spec + 60 * rim;
+            px[k * 4 + 2] = (66 - 44 * t) * m + 190 * spec + 40 * rim;
+            px[k * 4 + 3] = 255;
+          }
+        }
+      }
+      sheet.getContext('2d').putImageData(new ImageData(px, N, N), f * N, 0);
+    }
+
+    const soft = canvasOf(N * FRAMES, N), g = soft.getContext('2d');
+    g.filter = 'blur(4px)';          // browsers without canvas blur just get a sharp copy
+    g.drawImage(sheet, 0, 0);
+    return [sheet, soft];
   }
-  const sprites = [makeSprite(0), makeSprite(0.45), makeSprite(0.9)];
+  const [sharp, soft] = makeSheets();
 
   function tint(img, color) {
     const c = canvasOf(img.width, img.height), g = c.getContext('2d');
@@ -185,7 +221,7 @@
         if (corner) beat(t);
       }
       // dim it a little while it passes behind the text
-      const over = cardBox && mark.x + hx > cardBox.left && mark.x - hx < cardBox.right && mark.y + hy > cardBox.top && mark.y - hy < cardBox.bottom;
+      const over = cardBox && mark.x + hx * 0.75 > cardBox.left && mark.x - hx * 0.75 < cardBox.right && mark.y + hy * 0.75 > cardBox.top && mark.y - hy * 0.75 < cardBox.bottom;
       mark.under += ((over ? 0.4 : 1) - mark.under) * Math.min(1, dt * 3);
     }
 
@@ -238,17 +274,18 @@
   }
 
   function drawCell(ctx, c) {
-    const L = LAYERS[c.layer], r = c.k * S;
+    const L = LAYERS[c.layer], r = c.k * S * PAD;
     const fade = Math.min(1, c.age) * (c.dying ? Math.max(0, 1 - c.dying / 0.6) : 1);
-    const squash = 0.45 + 0.55 * Math.abs(Math.cos(c.tilt));      // tumbling
+    const sheet = L.sprite === 0 ? sharp : soft;
+    const f = Math.round(Math.acos(Math.abs(Math.cos(c.tilt))) / 1.5708 * (FRAMES - 1));   // face-on to edge-on
     const cs = Math.cos(c.a), sn = Math.sin(c.a);
-    ctx.setTransform(dpr * cs, dpr * sn, -dpr * sn * squash, dpr * cs * squash, dpr * c.x, dpr * c.y);
+    ctx.setTransform(dpr * cs, dpr * sn, -dpr * sn, dpr * cs, dpr * c.x, dpr * c.y);
     ctx.globalAlpha = L.alpha * fade;
-    ctx.drawImage(sprites[L.sprite], -r, -r, r * 2, r * 2);
+    ctx.drawImage(sheet, f * N, 0, N, N, -r, -r, r * 2, r * 2);
     if (c.lit > 0.05) {
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = 0.45 * c.lit * fade;
-      ctx.drawImage(sprites[L.sprite], -r, -r, r * 2, r * 2);
+      ctx.drawImage(sheet, f * N, 0, N, N, -r, -r, r * 2, r * 2);
       ctx.globalCompositeOperation = 'source-over';
     }
   }
